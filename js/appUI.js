@@ -4,12 +4,14 @@ Init_UI();
 
 function Init_UI() {
     renderContacts();
+    renderCategories();
     $('#createContact').on("click", async function () {
         saveContentScrollPosition();
         renderCreateContactForm();
     });
     $('#abort').on("click", async function () {
-        renderContacts();
+        //renderContacts();
+        renderCategories();
     });
     $('#aboutCmd').on("click", function () {
         renderAbout();
@@ -25,14 +27,14 @@ function renderAbout() {
     $("#content").append(
         $(`
             <div class="aboutContainer">
-                <h2>Gestionnaire de contacts</h2>
+                <h2>Gestionnaire de favoris</h2>
                 <hr>
                 <p>
-                    Petite application de gestion de contacts à titre de démonstration
+                    Petite application de gestion de favoris à titre de démonstration
                     d'interface utilisateur monopage réactive.
                 </p>
                 <p>
-                    Auteur: Nicolas Chourot
+                    Auteur: Lea Trudeau
                 </p>
                 <p>
                     Collège Lionel-Groulx, automne 2023
@@ -40,9 +42,85 @@ function renderAbout() {
             </div>
         `))
 }
+async function selectedCategory(){
+    hideCategories();
+    let contact = await Contacts_API.Get();
+    
+    $('.dropdown-item').on("click", function () {
+        const id = $(this).attr("id");
+        if(id !== "aboutCmd"){
+            if(id === "All"){
+            $(".fa-check").show();
+            renderContacts();
+            }
+            else {
+                $("#iconAll").hide();
+                hideCategories();
+                showCheck(id);
+                renderFilters(id);
+            }
+        }
+        
+    });
+}
+function showCheck(id){
+    $("#icon" + id.split(" ")[0]).show();
+}
+async function hideCategories(){
+    // let contacts = await Contacts_API.Get();
+    // $(`#iconAll`).hide();
+    // contacts.forEach(contact =>{
+    //     $(`#icon${contact.Categorie}`).hide(); 
+    // })
+    $(".fa-check").not("#iconAll").hide();
+}
+
+async function renderCategories() {
+    eraseCategories();
+    let contacts = await Contacts_API.Get();
+    var categories = []
+    contacts.forEach(contact =>{
+        if(!categories.includes(contact.Categorie)){
+            $('#categoriesContainer').append(renderCategorie(contact.Categorie));
+            categories.push(contact.Categorie);
+        }
+    });
+    selectedCategory();
+}
+
+function renderCategorie(categorie){
+    return $(`<div class="dropdown-item" id="${categorie}"><i id="icon${categorie.split(" ")[0]}" class="fa fa-check"></i>${categorie}</div>`)
+}
+async function renderFilters(id){
+    showWaitingGif();
+    $("#actionTitle").text("Liste des favoris");
+    $("#createContact").show();
+    $("#abort").hide();
+    let contacts = await Contacts_API.Get();
+    eraseContent();
+    if (contacts !== null) {
+        contacts.forEach(contact => {
+            if(id === contact.Categorie)
+                $("#content").append(renderContact(contact));
+        });
+        restoreContentScrollPosition();
+        // Attached click events on command icons
+        $(".editCmd").on("click", function () {
+            saveContentScrollPosition();
+            renderEditContactForm(parseInt($(this).attr("editContactId")));
+        });
+        $(".deleteCmd").on("click", function () {
+            saveContentScrollPosition();
+            renderDeleteContactForm(parseInt($(this).attr("deleteContactId")));
+        });
+        $(".contactRow").on("click", function (e) { e.preventDefault(); })
+    } else {
+        renderError("Service introuvable");
+    }
+}
 async function renderContacts() {
     showWaitingGif();
-    $("#actionTitle").text("Liste des contacts");
+    $("#actionTitle").text("Liste des favoris");
     $("#createContact").show();
     $("#abort").hide();
     let contacts = await Contacts_API.Get();
@@ -72,6 +150,9 @@ function showWaitingGif() {
 }
 function eraseContent() {
     $("#content").empty();
+}
+function eraseCategories() {
+    $("#categoriesContainer").empty();
 }
 function saveContentScrollPosition() {
     contentScrollPosition = $("#content")[0].scrollTop;
@@ -115,9 +196,8 @@ async function renderDeleteContactForm(id) {
             <div class="contactRow" contact_id=${contact.Id}">
                 <div class="contactContainer">
                     <div class="contactLayout">
-                        <div class="contactName">${contact.Name}</div>
-                        <div class="contactPhone">${contact.Phone}</div>
-                        <div class="contactEmail">${contact.Email}</div>
+                        <div class="contactTitre"><img class="contactImage" src="http://www.google.com/s2/favicons?domain=${contact.Url}">${contact.Titre}</div>
+                        <div class="contactCategorie">${contact.Categorie}</div>
                     </div>
                 </div>  
             </div>   
@@ -129,8 +209,10 @@ async function renderDeleteContactForm(id) {
         $('#deleteContact').on("click", async function () {
             showWaitingGif();
             let result = await Contacts_API.Delete(contact.Id);
-            if (result)
+            if (result){
                 renderContacts();
+                renderCategories();
+            }
             else
                 renderError("Une erreur est survenue!");
         });
@@ -144,9 +226,9 @@ async function renderDeleteContactForm(id) {
 function newContact() {
     contact = {};
     contact.Id = 0;
-    contact.Name = "";
-    contact.Phone = "";
-    contact.Email = "";
+    contact.Titre = "";
+    contact.Url = "";
+    contact.Categorie = "";
     return contact;
 }
 function renderContactForm(contact = null) {
@@ -155,45 +237,54 @@ function renderContactForm(contact = null) {
     eraseContent();
     let create = contact == null;
     if (create) contact = newContact();
+    let contactImage = contact.Url;
+    console.log(contactImage);
+    if(contactImage == null || contactImage == undefined || contactImage == ""){
+        contactImage = "bookmark-logo.svg";
+    } 
+    else{
+        contactImage = "http://www.google.com/s2/favicons?domain=" + contact.Url;
+    } 
+
     $("#actionTitle").text(create ? "Création" : "Modification");
     $("#content").append(`
         <form class="form" id="contactForm">
             <input type="hidden" name="Id" value="${contact.Id}"/>
-
-            <label for="Name" class="form-label">Nom </label>
+            <img class="bigContactImage" src="${contactImage}"/>
+            <br>
+            <label for="Titre" class="form-label">Titre </label>
             <input 
-                class="form-control Alpha"
-                name="Name" 
-                id="Name" 
-                placeholder="Nom"
+                class="form-control Titre"
+                name="Titre" 
+                id="Titre" 
+                placeholder="Titre"
                 required
-                RequireMessage="Veuillez entrer un nom"
-                InvalidMessage="Le nom comporte un caractère illégal" 
-                value="${contact.Name}"
+                RequireMessage="Veuillez entrer un titre"
+                InvalidMessage="Le titre comporte un caractère illégal" 
+                value="${contact.Titre}"
             />
-            <label for="Phone" class="form-label">Téléphone </label>
+            <label for="Url" class="form-label">Url </label>
             <input
-                class="form-control Phone"
-                name="Phone"
-                id="Phone"
-                placeholder="(000) 000-0000"
+                class="form-control Url"
+                name="Url"
+                id="Url"
+                placeholder="Url"
                 required
-                RequireMessage="Veuillez entrer votre téléphone" 
-                InvalidMessage="Veuillez entrer un téléphone valide"
-                value="${contact.Phone}" 
+                RequireMessage="Veuillez entrer le Url" 
+                InvalidMessage="Veuillez entrer un Url valide"
+                value="${contact.Url}" 
             />
-            <label for="Email" class="form-label">Courriel </label>
+            <label for="Categorie" class="form-label">Categorie </label>
             <input 
-                class="form-control Email"
-                name="Email"
-                id="Email"
-                placeholder="Courriel"
+                class="form-control Categorie"
+                name="Categorie"
+                id="Categorie"
+                placeholder="Categorie"
                 required
-                RequireMessage="Veuillez entrer votre courriel" 
-                InvalidMessage="Veuillez entrer un courriel valide"
-                value="${contact.Email}"
+                RequireMessage="Veuillez entrer une categorie" 
+                InvalidMessage="Veuillez entrer un categorie valide"
+                value="${contact.Categorie}"
             />
-            <hr>
             <input type="submit" value="Enregistrer" id="saveContact" class="btn btn-primary">
             <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
         </form>
@@ -205,8 +296,10 @@ function renderContactForm(contact = null) {
         contact.Id = parseInt(contact.Id);
         showWaitingGif();
         let result = await Contacts_API.Save(contact, create);
-        if (result)
+        if (result){
             renderContacts();
+            renderCategories();
+        }
         else
             renderError("Une erreur est survenue!");
     });
@@ -229,13 +322,12 @@ function renderContact(contact) {
      <div class="contactRow" contact_id=${contact.Id}">
         <div class="contactContainer noselect">
             <div class="contactLayout">
-                <span class="contactName">${contact.Name}</span>
-                <span class="contactPhone">${contact.Phone}</span>
-                <span class="contactEmail">${contact.Email}</span>
+                <div class="contactTitre"><img class="contactImage" src="http://www.google.com/s2/favicons?domain=${contact.Url}">${contact.Titre}</div>
+                <a class="contactCategorie" href="${contact.Url}">${contact.Categorie}</a>
             </div>
             <div class="contactCommandPanel">
-                <span class="editCmd cmdIcon fa fa-pencil" editContactId="${contact.Id}" title="Modifier ${contact.Name}"></span>
-                <span class="deleteCmd cmdIcon fa fa-trash" deleteContactId="${contact.Id}" title="Effacer ${contact.Name}"></span>
+                <span class="editCmd cmdIcon fa fa-pencil" editContactId="${contact.Id}" title="Modifier ${contact.Titre}"></span>
+                <span class="deleteCmd cmdIcon fa fa-trash" deleteContactId="${contact.Id}" title="Effacer ${contact.Titre}"></span>
             </div>
         </div>
     </div>           

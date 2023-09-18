@@ -9,10 +9,12 @@
     display: grid;
     grid-template-columns: 4fr 1fr;
     align-items: top;
-    background-color: rgb(87, 140, 255);
+    background-color: rgb(238, 238, 238);
     border-radius: 6px;
 }
-
+.form-label{
+    font-weight: bold;
+}
 
 .contactContainer .cmdIcon {
     display: none;
@@ -30,18 +32,18 @@
     align-items: center;
 }
 
-.contactName {
+
+.contactTitre {
     font-size: 1.1rem;
     font-weight: bold;
-    color: white;
+    color: rgb(0, 0, 0);
 }
 
-.contactPhone {
-    color: white;
+.contactCategorie{
+    color: blue;
 }
-
-.contactEmail {
-    color: white;
+.contactUrl {
+    color: rgb(240, 1, 1);
 }
 
 .contactCommandPanel {
@@ -54,3 +56,15 @@
 .contactdeleteForm {
     margin: 20px;
 }
+
+.contactImage{
+    width: 25px;
+    height: 25px;
+    margin-right: 5px
+}
+.bigContactImage{
+    width: 25px;
+    height: 25px;
+    margin-right: 5px
+}
+

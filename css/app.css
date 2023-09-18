@@ -139,3 +139,6 @@ a {
     text-decoration: none !important;
     color: white !important;
 }
+.fa-check{
+    color: rgb(36, 122, 207);
+}

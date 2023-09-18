@@ -1,5 +1,6 @@
 class Contacts_API {
-    static API_URL() { return "http://localhost:5000/api/contacts" };
+    // static API_URL() { return "http://localhost:5000/api/contacts" };
+    static API_URL() { return "https://icy-pacific-friday.glitch.me/api/contacts" };
     static async Get(id = null) {
         return new Promise(resolve => {
             $.ajax({
