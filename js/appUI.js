@@ -231,26 +231,43 @@ function newContact() {
     contact.Categorie = "";
     return contact;
 }
+
+function loadFavicon(url) {
+    $("#favicon").empty();
+    var request = new XMLHttpRequest;
+    request.open('GET', url, true);
+    request.send();
+    request.onreadystatechange = function(){
+        if(request.readyState == 4){
+            $("#favicon").append(
+                $(`
+                    <img style="width: 50px; height: 50px;"
+                    src="http://www.google.com/s2/favicons?domain=${url}" />
+                `))
+        }
+        if(url === undefined || url === null || url === ""){
+            $("#favicon").empty();
+            $("#favicon").append(
+                $(`
+                    <img style="width: 50px; height: 50px;"
+                    src="bookmark-logo.svg" />
+                `))
+        }
+    }
+}
+
 function renderContactForm(contact = null) {
     $("#createContact").hide();
     $("#abort").show();
     eraseContent();
     let create = contact == null;
     if (create) contact = newContact();
-    let contactImage = contact.Url;
-    console.log(contactImage);
-    if(contactImage == null || contactImage == undefined || contactImage == ""){
-        contactImage = "bookmark-logo.svg";
-    } 
-    else{
-        contactImage = "http://www.google.com/s2/favicons?domain=" + contact.Url;
-    } 
-
+    loadFavicon(contact.Url)
     $("#actionTitle").text(create ? "Création" : "Modification");
     $("#content").append(`
         <form class="form" id="contactForm">
             <input type="hidden" name="Id" value="${contact.Id}"/>
-            <img class="bigContactImage" src="${contactImage}"/>
+            <div id="favicon" style="width:50px;height:50px"></div>
             <br>
             <label for="Titre" class="form-label">Titre </label>
             <input 
@@ -289,6 +306,12 @@ function renderContactForm(contact = null) {
             <input type="button" value="Annuler" id="cancel" class="btn btn-secondary">
         </form>
     `);
+
+    $('#Url').on("change", function () {
+        var url = document.getElementById("Url").value;
+        loadFavicon(url);
+    });
+
     initFormValidation();
     $('#contactForm').on("submit", async function (event) {
         event.preventDefault();
